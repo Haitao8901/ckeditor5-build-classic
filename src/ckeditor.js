@@ -27,8 +27,14 @@ import Paragraph from '@ckeditor/ckeditor5-paragraph/src/paragraph';
 import PasteFromOffice from '@ckeditor/ckeditor5-paste-from-office/src/pastefromoffice';
 import Table from '@ckeditor/ckeditor5-table/src/table';
 import TableToolbar from '@ckeditor/ckeditor5-table/src/tabletoolbar';
+import Highlight from '@ckeditor/ckeditor5-highlight/src/highlight';
+import Term from './term/Term';
 
-export default class ClassicEditor extends ClassicEditorBase {}
+export default class ClassicEditor extends ClassicEditorBase {
+	constructor(){
+		super();
+	}
+}
 
 // Plugins to include in the build.
 ClassicEditor.builtinPlugins = [
@@ -52,7 +58,9 @@ ClassicEditor.builtinPlugins = [
 	Paragraph,
 	PasteFromOffice,
 	Table,
-	TableToolbar
+	TableToolbar,
+	Highlight,
+	Term
 ];
 
 // Editor configuration.
@@ -71,7 +79,9 @@ ClassicEditor.defaultConfig = {
 			'insertTable',
 			'mediaEmbed',
 			'undo',
-			'redo'
+			'redo',
+			'highlight',
+			'term'
 		]
 	},
 	image: {

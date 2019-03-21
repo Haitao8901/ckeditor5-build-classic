@@ -9,15 +9,17 @@
 
 const path = require( 'path' );
 const webpack = require( 'webpack' );
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { bundler, styles } = require( '@ckeditor/ckeditor5-dev-utils' );
 const CKEditorWebpackPlugin = require( '@ckeditor/ckeditor5-dev-webpack-plugin' );
 const UglifyJsWebpackPlugin = require( 'uglifyjs-webpack-plugin' );
 
 module.exports = {
+	mode: 'development',
 	devtool: 'source-map',
 	performance: { hints: false },
 
-	entry: path.resolve( __dirname, 'src', 'ckeditor.js' ),
+	entry: [path.resolve( __dirname, 'src', 'ckeditor.js' )],
 
 	output: {
 		// The name under which the editor will be exported.
@@ -53,7 +55,12 @@ module.exports = {
 		new webpack.BannerPlugin( {
 			banner: bundler.getLicenseBanner(),
 			raw: true
-		} )
+		} ),
+		new HtmlWebpackPlugin({
+            filename: 'test.html',
+            inject: 'head',
+            template: 'test.html'
+        })
 	],
 
 	module: {
