@@ -1,9 +1,15 @@
 import Plugin from '@ckeditor/ckeditor5-core/src/plugin';
 import {viewToModelPositionOutsideModelElement} from '@ckeditor/ckeditor5-widget/src/utils';
 import TermCommand from './TermCommand';
+import TermHelper from './TermHelper';
 import './term.css';
 
 export default class TermEditing extends Plugin {
+    constructor(editor){
+        super(editor);
+        this.editor.model.termHelper = new TermHelper(editor);
+    }
+
     init() {
         this._defineSchema();
         this._defineConverters();
@@ -62,10 +68,11 @@ export default class TermEditing extends Plugin {
             const termView = viewWriter.createContainerElement( 'span', {
                 class: title ? 'term_found' : 'term',
                 value: value,
-                title: title
+                title: title,
+                contenteditable: false
             } );
 
-			const text = viewWriter.createText('<' + label + '>');
+			const text = viewWriter.createText(label);
 			viewWriter.insert( viewWriter.createPositionAt( termView, 0 ), text );
             return termView;
         }

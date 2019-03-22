@@ -80,8 +80,7 @@ ClassicEditor.defaultConfig = {
 			'mediaEmbed',
 			'undo',
 			'redo',
-			'highlight',
-			'term'
+			'highlight'
 		]
 	},
 	image: {

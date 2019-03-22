@@ -1,16 +1,184 @@
+import Plugin from '@ckeditor/ckeditor5-core/src/plugin';
 
-export default class TermChecking{
+export default class TermChecking extends Plugin{
 	constructor( editor) {
-        this.editor = editor;
+        super(editor);
         this.model = this.editor.model;
-		this.document = model.document;
+        this.document = this.model.document;
     }
 
     init(){
         this.editor.editing.view.document.on( 'mutations', this.checkForTyping );
+        this.listenTo( this.model, '_afterChanges', this.checkTerm.bind(this), { priority: 'lowest' } );
     }
 
     checkForTyping(evt, mutations, viewSelection ){
+        // console.log(mutations[0]);
+    }
+
+    checkTerm(){
+        const selection = this.document.selection;
+        if(selection.rangeCount > 1){
+            return;
+        }
+        const range = selection.getFirstRange();
+        if(!range.isCollapsed){
+            return;
+        }
+
+        if(this.checkFullTerm()){
+            return;
+        }
+
+        this.checkTermPrefix();
+    }
+
+    checkFullTerm(){
+        const range =  this.document.selection.getFirstRange();
+        const model = this.model;
+        const position = range.start;
+        const root = position.root;
+        let nodeAfter,nodeBefore;
+        let textNode = position.textNode;
+
+        const checkingText = {
+            before:'', 
+            normal:'', 
+            after:'',
+            merge:function(){
+                return this.before + this.normal + this.after;
+            }
+        };
         
+        //cursor in text node, then nodeBefore and nodeAfter is null
+        if(textNode){
+            checkingText.normal = textNode._data;
+            nodeBefore = textNode.previousSibling;
+            nodeAfter = textNode.nextSibling;
+        }else{
+            nodeAfter = position.nodeAfter;
+            nodeBefore = position.nodeBefore;
+        }
+
+        while(nodeAfter && nodeAfter.is('text')){
+            checkingText.after += nodeAfter._data;
+            nodeAfter = nodeAfter.nextSibling;
+        }
+
+        while(nodeBefore && nodeBefore.is('text')){
+            checkingText.before += nodeBefore._data;
+            nodeBefore = nodeBefore.previousSibling;
+        }
+
+        let basePath = position.path.slice();
+        basePath.pop();
+        let needAddedOffset = 0;       
+        //if exist, this mustn't be a textnode element
+        if(nodeBefore){
+            const nbposition = model.createPositionAfter(nodeBefore);
+            needAddedOffset = nbposition.path.pop();
+        }
+
+        //pureText of all the textnode near the cursor
+        const pureText = checkingText.merge();
+        const terms = [];
+        pureText.replace(/<[^<>]+>/ig, function(term, index){
+            console.log(term + '---' + index);
+
+            const start = model.createPositionFromPath(root, _this.getPathArray(basePath, index, needAddedOffset));
+            const end = model.createPositionFromPath(root, _this.getPathArray(basePath, index + term.length, needAddedOffset));
+
+            terms.push({
+                start:start,
+                length:term.length,
+                end: end,
+                label:term,
+                value:''
+            });
+
+        });
+        if(terms.length == 0){
+            return false;
+        }
+        this.insertFullTerm(terms);
+        return true;
+    }
+
+    /**
+     * Not contain any well formated term then check if ther exist a term prefix '<...'
+     */
+    checkTermPrefix(){
+        const range =  this.document.selection.getFirstRange();
+        const model = this.model;
+        const position = range.start;
+        const root = position.root;
+        let nodeBefore;
+        let textNode = position.textNode;
+
+        const checkingText = {
+            before:'', 
+            normal:'', 
+            merge:function(){
+                return this.before + this.normal;
+            }
+        };
+        
+        //cursor in text node, then nodeBefore and nodeAfter is null
+        if(textNode){
+            checkingText.normal = textNode._data;
+            nodeBefore = textNode.previousSibling;
+        }else{
+            nodeBefore = position.nodeBefore;
+        }
+
+        while(nodeBefore && nodeBefore.is('text')){
+            checkingText.before += nodeBefore._data;
+            nodeBefore = nodeBefore.previousSibling;
+        }
+
+        let basePath = position.path.slice();
+        const cursorPosition = basePath.pop();
+        let needAddedOffset = 0;       
+        //if exist, this mustn't be a textnode element
+        if(nodeBefore){
+            const nbposition = model.createPositionAfter(nodeBefore);
+            needAddedOffset = nbposition.path.pop();
+        }
+
+        //pureText of all the textnode near the cursor
+        const pureText = checkingText.merge().substring(0, cursorPosition-needAddedOffset);
+        const terms = [];
+        const _this = this;
+        pureText.replace(/<[^<]*/ig, function(term, index){
+            console.log(term + '---' + index);
+
+            const start = model.createPositionFromPath(root, _this.getPathArray(basePath, index, needAddedOffset));
+            const end = model.createPositionFromPath(root, _this.getPathArray(basePath, index + term.length, needAddedOffset));
+
+            _this.editor.model.termHelper.queryTermFromServer(term, function(label, title){
+                terms.push({
+                    start:start,
+                    length:term.length,
+                    end: end,
+                    label:label,
+                    value:title
+                });
+            });
+            
+        });
+        if(terms.length == 0){
+            return;
+        }
+        _this.insertFullTerm(terms);
+    }
+
+    getPathArray(base, offset, add){
+        const temp = base.slice();
+        temp.push(offset + add);
+        return temp;
+    }
+
+    insertFullTerm(terms){
+        this.editor.execute('term', terms);
     }
 }
