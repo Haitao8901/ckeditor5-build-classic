@@ -1,37 +1,65 @@
+import { setTimeout } from "timers";
+import EnterObserver from '@ckeditor/ckeditor5-enter/src/enterobserver';
 
 export default class TermHelper {
     constructor(editor){
         this.editor = editor;
-        if(window.Script){
-           this.serviceUrl = Script.httpServiceUrl;
-           this.orgid = 'cyberobject',
-           this.appid = 'haitaotest',
-        //    this.serviceUrl = Script.httpServiceUrl;
-        //    this.orgid = Script.orgid,
-        //    this.appid = Script.appid;
-           AutoComplete.init(this.serviceUrl, this.orgid, this.appid);
-        }
-    }
+        if(!window.Script){
+			//for test
+			this.serviceUrl = 'http://192.168.0.133:8900/iplatform-ruleeditor/HttpService';
+			this.orgid = 'cyberobject';
+			this.appid = 'haitaotest';
+			if(AutoComplete){
+				AutoComplete.init(this.serviceUrl, this.orgid, this.appid);
+			}
+		}
+	}
+	
+	checkAvailabel(){
+		if(AutoComplete){
+			//Hide first, will be shown later
+			AutoComplete.MenuHide();
+			return true;
+		}
+		console.log('AutoComplete not defined. TermHelper won\'t work.');
+		return false;
+	}
 
     queryTermFromServer(term, clickCb){
-		    if (!term) {
-		    	setTimeout(function(){AutoComplete.MenuHide();}, 50);
-		        return;
-            }
-            clickCb('term', 'http://wwww/term/test');
+		if(!this.checkAvailabel()){
+			return;
+		}
+		if (!term) {
+			setTimeout(function(){AutoComplete.MenuHide();}, 50);
+			return;
+		}
 		
-			const cursorLocation = getSelectionCoords(window)
-		    term = term.replace(/ /g,' ');
-		    var queryCb = function () {
-		        if (!AutoComplete.MenuIsShow()){
-		            var mX = cursorLocation.x;
-		            var mY = cursorLocation.y + 13;
-		            AutoComplete.MenuShow(mX, mY);
-		        }
-		    }
-		    
-		    AutoComplete.queryDifTerm(key, queryCb, clickCb);
-    }
+		const cursorLocation = this.getSelectionCoords(window)
+		term = term.replace(/ /g,' ');
+		const queryCb = () => {
+			if (!AutoComplete.MenuIsShow()){
+				var mX = cursorLocation.x;
+				var mY = cursorLocation.y + 13;
+				AutoComplete.MenuShow(mX, mY);
+			}
+			this.disableEnter(true);
+		}
+		const callback = (value, title) => {
+			this.disableEnter(false);
+			clickCb(value, title);
+		}
+		AutoComplete.queryDifTerm(term, queryCb, callback);
+	}
+	
+	disableEnter(disable){
+		const view = this.editor.editing.view;
+		const enterOberver = view.getObserver(EnterObserver);
+		if(disable){
+			enterOberver.disable();
+		}else{
+			enterOberver.enable();
+		}
+	}
 
     /**Copy from script.html*/
     getSelectionCoords(win) {
@@ -86,32 +114,9 @@ export default class TermHelper {
     }
     
     checkUnknowTerm(term, callback){
-        var params = {
-                orgid: this.orgid,
-                appid: this.appid,
-                keyword: term
-            };
-    
-            AutoComplete.post(this.httpServiceUrl, {
-                'request': JSON.stringify({
-                    'header': {
-                        'action': 'copyApp.queryDifTerm'
-                    },
-                    "body": {
-                        data:JSON.stringify(params),
-                        timeTag:new Date().getTime()
-                    }
-                })
-            }, function (data) {
-                if (data.body && data.body.data && data.body.data.status.code == "0000") {
-                    var terms = data.body.data.body.terms;
-                    for(var i in terms){
-                        if(terms[i].lemma == term){
-                            callback(terms[i].source);
-                            return;
-                        }
-                    }
-                }
-            })
+		if(!this.checkAvailabel()){
+			return;
+		}
+		AutoComplete.checkUnknowTerm(term, callback);
     }
 }

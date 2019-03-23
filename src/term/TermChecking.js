@@ -8,11 +8,11 @@ export default class TermChecking extends Plugin{
     }
 
     init(){
-        this.editor.editing.view.document.on( 'mutations', this.checkForTyping );
+        this.editor.editing.view.document.on( 'mutations', this.checkMutations );
         this.listenTo( this.model, '_afterChanges', this.checkTerm.bind(this), { priority: 'lowest' } );
     }
 
-    checkForTyping(evt, mutations, viewSelection ){
+    checkMutations(evt, mutations, viewSelection ){
         // console.log(mutations[0]);
     }
 
@@ -82,18 +82,26 @@ export default class TermChecking extends Plugin{
         //pureText of all the textnode near the cursor
         const pureText = checkingText.merge();
         const terms = [];
+        const _this = this;
+
+        let foundTermsLength = 0;
+        let order = 0;
         pureText.replace(/<[^<>]+>/ig, function(term, index){
             console.log(term + '---' + index);
-
+            
+            index = index - foundTermsLength + (order++);
+            foundTermsLength += term.length;
+            
             const start = model.createPositionFromPath(root, _this.getPathArray(basePath, index, needAddedOffset));
             const end = model.createPositionFromPath(root, _this.getPathArray(basePath, index + term.length, needAddedOffset));
-
+            const value = term.substring(1, term.length-1);//remove the '<' and '>'
             terms.push({
                 start:start,
                 length:term.length,
                 end: end,
                 label:term,
-                value:''
+                value:value,
+                title:''
             });
 
         });
@@ -147,29 +155,24 @@ export default class TermChecking extends Plugin{
 
         //pureText of all the textnode near the cursor
         const pureText = checkingText.merge().substring(0, cursorPosition-needAddedOffset);
-        const terms = [];
         const _this = this;
         pureText.replace(/<[^<]*/ig, function(term, index){
             console.log(term + '---' + index);
 
             const start = model.createPositionFromPath(root, _this.getPathArray(basePath, index, needAddedOffset));
             const end = model.createPositionFromPath(root, _this.getPathArray(basePath, index + term.length, needAddedOffset));
-
-            _this.editor.model.termHelper.queryTermFromServer(term, function(label, title){
-                terms.push({
+            term = term.substring(1);
+            _this.editor.model.termHelper.queryTermFromServer(term ? term : '*', function(value, title){
+                _this.insertFullTerm({
                     start:start,
                     length:term.length,
                     end: end,
-                    label:label,
-                    value:title
+                    label:'<' + value + '>',
+                    value:value,
+                    title: title
                 });
             });
-            
         });
-        if(terms.length == 0){
-            return;
-        }
-        _this.insertFullTerm(terms);
     }
 
     getPathArray(base, offset, add){
@@ -179,6 +182,6 @@ export default class TermChecking extends Plugin{
     }
 
     insertFullTerm(terms){
-        this.editor.execute('term', terms);
+        this.editor.execute('term', [].concat(terms));
     }
 }

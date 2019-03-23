@@ -59,7 +59,6 @@ ClassicEditor.builtinPlugins = [
 	PasteFromOffice,
 	Table,
 	TableToolbar,
-	Highlight,
 	Term
 ];
 
@@ -79,8 +78,7 @@ ClassicEditor.defaultConfig = {
 			'insertTable',
 			'mediaEmbed',
 			'undo',
-			'redo',
-			'highlight'
+			'redo'
 		]
 	},
 	image: {

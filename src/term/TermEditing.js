@@ -23,7 +23,9 @@ export default class TermEditing extends Plugin {
 
     _defineSchema() {
         const schema = this.editor.model.schema;
-        //<term label='' value='' title=''></term>
+        //model format: <term label='' value='' title=''></term>
+        //view format: <span title='$title' value='$value'>$label</span>
+        //label = '<' + value + '>'
         schema.register( 'term', {
 			inheritAllFrom: '$text',
 			isInline: true,
@@ -46,17 +48,37 @@ export default class TermEditing extends Plugin {
             view: createTermView
         } );
 
+        /**
+         * below is not work(will find why in the future): 
+           view: {
+                name: 'span',
+                classes: ['term', 'term_found']
+            }
+            so divide the classses into two upcast
+        */
         conversion.for( 'upcast' ).elementToElement( {
             view: {
                 name: 'span',
-                classes: [ 'term', 'term_found' ]
+                classes: 'term'
             },
             model: ( viewElement, modelWriter ) => {
-				const name = viewElement.getChild( 0 ).data.slice( 1, -1 );
-				const title = modelItem.getAttribute( 'title' );
-            	const value = modelItem.getAttribute( 'value' );
+				const label = viewElement.getChild( 0 ).data;
+				const title = viewElement.getAttribute( 'title' );
+            	const value = viewElement.getAttribute( 'value' );
+                return modelWriter.createElement( 'term', { label:label, title:title, value:value } );
+            }
+        } );
 
-                return modelWriter.createElement( 'term', { label:name, title:title, value:value } );
+        conversion.for( 'upcast' ).elementToElement( {
+            view: {
+                name: 'span',
+                classes: 'term_found'
+            },
+            model: ( viewElement, modelWriter ) => {
+				const label = viewElement.getChild( 0 ).data;
+				const title = viewElement.getAttribute( 'title' );
+            	const value = viewElement.getAttribute( 'value' );
+                return modelWriter.createElement( 'term', { label:label, title:title, value:value } );
             }
         } );
 
