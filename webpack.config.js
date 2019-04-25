@@ -15,7 +15,7 @@ const CKEditorWebpackPlugin = require( '@ckeditor/ckeditor5-dev-webpack-plugin' 
 const UglifyJsWebpackPlugin = require( 'uglifyjs-webpack-plugin' );
 
 module.exports = {
-	mode: 'development',
+	mode: 'production',
 	devtool: 'source-map',
 	performance: { hints: false },
 

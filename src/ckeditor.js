@@ -29,6 +29,7 @@ import Table from '@ckeditor/ckeditor5-table/src/table';
 import TableToolbar from '@ckeditor/ckeditor5-table/src/tabletoolbar';
 import Highlight from '@ckeditor/ckeditor5-highlight/src/highlight';
 import Term from './term/Term';
+import DebugHighlight from './debughighlight/DebugHighlightPlugin';
 
 export default class ClassicEditor extends ClassicEditorBase {
 	constructor(){
@@ -59,7 +60,9 @@ ClassicEditor.builtinPlugins = [
 	PasteFromOffice,
 	Table,
 	TableToolbar,
-	Term
+	Term,
+	// Highlight,
+	DebugHighlight
 ];
 
 // Editor configuration.

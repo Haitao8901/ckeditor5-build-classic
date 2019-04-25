@@ -17,6 +17,9 @@ export default class TermChecking extends Plugin{
     }
 
     checkTerm(){
+        if(this.editor.isReadOnly) {
+            return;
+        }
         const selection = this.document.selection;
         if(selection.rangeCount > 1){
             return;
