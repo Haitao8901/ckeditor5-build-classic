@@ -86,8 +86,13 @@ export default class HightlightCommand extends Command {
                 return;
             }
 
-            //if contains sub ol/ul then we must have created a div(the first child) 
-            writer.removeClass('debugHighlight', childrenNeedHighlight[0]);
+            //if contains sub ol/ul then
+            // 1 if we have created a div(the first child) then remove class
+            // 2 when open the file, we need check the child
+            const cEl =  childrenNeedHighlight[0];
+            if(cEl._removeClass){
+                writer.removeClass('debugHighlight', cEl);
+            }
         });
     }
 
